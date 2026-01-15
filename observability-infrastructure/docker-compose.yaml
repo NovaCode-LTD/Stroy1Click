@@ -1,0 +1,136 @@
+services:
+  product-db:
+    image: postgres:15.13
+    container_name: product-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5432:5432"
+    networks:
+      - stroy1click
+  user-db:
+    image: postgres:15.13
+    container_name: user-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5433:5432"
+    networks:
+      - stroy1click
+  order-db:
+    image: postgres:15.13
+    container_name: order-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5434:5432"
+    networks:
+      - stroy1click
+  attribute-db:
+    image: postgres:15.13
+    container_name: attribute-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5435:5432"
+    networks:
+      - stroy1click
+  confirmation-code-db:
+    image: postgres:15.13
+    container_name: confirmation-code-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5436:5432"
+    networks:
+      - stroy1click
+  auth-db:
+    image: postgres:15.13
+    container_name: auth-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5437:5432"
+    networks:
+      - stroy1click
+  redis-cache:
+    image: redis:6.2
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - stroy1click
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.133.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel/collector-config.yml"]
+    volumes:
+      - ./docker-volume/collector-config.yaml:/etc/otel/collector-config.yml
+    ports:
+      - "4317:4317"
+    networks:
+      stroy1click:
+  loki:
+    image: grafana/loki:3.5.3
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./docker-volume/loki.yaml:/etc/loki/loki-config.yaml
+    depends_on:
+      - otel-collector
+    networks:
+      stroy1click:
+  tempo:
+    image: grafana/tempo:2.8.2
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./docker-volume/tempo.yaml:/etc/tempo.yaml
+    depends_on:
+      - otel-collector
+    networks:
+      stroy1click:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: prometheus
+    volumes:
+      - ./docker-volume/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --web.listen-address=:9095
+    ports:
+      - "9095:9095"
+    depends_on:
+      - otel-collector
+    networks:
+      stroy1click:
+  grafana:
+    image: grafana/grafana:12.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker-volume/grafana.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+    networks:
+      stroy1click:
+networks:
+  stroy1click:
