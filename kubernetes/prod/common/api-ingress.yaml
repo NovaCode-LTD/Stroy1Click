@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: stroy1click-ingress
+  name: api-stroy1click-ingress
   annotations:
     nginx.ingress.kubernetes.io/auth-url: "http://jwt-validator-service.prod.svc.cluster.local:9050/api/v1/jwt/validate"
     nginx.ingress.kubernetes.io/auth-request-redirect: "$request_uri"
@@ -19,7 +19,7 @@ spec:
   tls:
     - hosts:
         - api.stroy1click.ru
-      secretName: stroy1click-tls
+      secretName: api-stroy1click-tls
   rules:
     - host: api.stroy1click.ru
       http:

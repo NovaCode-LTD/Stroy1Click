@@ -30,7 +30,6 @@ spec:
               containerPort: 4317
             - name: otlp-http
               containerPort: 4318
-
           volumeMounts:
             - mountPath: /etc/tempo
               name: tempo-config
@@ -44,6 +43,9 @@ spec:
             requests:
               memory: 1Gi
               cpu: "500m"
+          envFrom:
+            - secretRef:
+                name: tempo-s3
       volumes:
         - name: tempo-config
           configMap:
