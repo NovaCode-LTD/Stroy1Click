@@ -18,10 +18,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.novacodeltd.ru
+        - api.stroy1click.ru
       secretName: stroy1click-tls
   rules:
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/products
@@ -31,7 +31,7 @@ spec:
                 name: product-service
                 port:
                   number: 7070
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/categories
@@ -41,7 +41,7 @@ spec:
                 name: product-service
                 port:
                   number: 7070
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/subcategories
@@ -51,7 +51,7 @@ spec:
                 name: product-service
                 port:
                   number: 7070
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/product-types
@@ -61,7 +61,7 @@ spec:
                 name: product-service
                 port:
                   number: 7070
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/storage
@@ -71,7 +71,7 @@ spec:
                 name: product-service
                 port:
                   number: 7070
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/orders
@@ -81,7 +81,7 @@ spec:
                 name: order-service
                 port:
                   number: 1010
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/users
@@ -91,7 +91,7 @@ spec:
                 name: user-service
                 port:
                   number: 8080
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/attributes
@@ -101,7 +101,7 @@ spec:
                 name: attribute-service
                 port:
                   number: 4040
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/attribute-options
@@ -111,7 +111,7 @@ spec:
                 name: attribute-service
                 port:
                   number: 4040
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/product-attribute-assignments
@@ -121,7 +121,7 @@ spec:
                 name: attribute-service
                 port:
                   number: 4040
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/notification
@@ -131,7 +131,7 @@ spec:
                 name: notification-service
                 port:
                   number: 2020
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/confirmation-codes
@@ -141,7 +141,7 @@ spec:
                 name: confirmation-code-service
                 port:
                   number: 6060
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/emails
@@ -151,7 +151,7 @@ spec:
                 name: email-service
                 port:
                   number: 5050
-    - host: api.novacodeltd.ru
+    - host: api.stroy1click.ru
       http:
         paths:
           - path: /api/v1/auth
