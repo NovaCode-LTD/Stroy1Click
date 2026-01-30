@@ -8,5 +8,5 @@ resources:
   - email
   - notification
   - order
-  - product
+  - catalog
   - user

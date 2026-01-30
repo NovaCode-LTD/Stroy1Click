@@ -20,7 +20,7 @@
 ## 🧩 Архитектура
 
 <p align="center">
-  <img src="images/Stroy1Click.drawio-3.drawio-4.svg" alt="Stroy1Click Architecture" width="900"/>
+  <img src="images/Stroy1Click.drawio-3.drawio-4.drawio.svg" alt="Stroy1Click Architecture" width="900"/>
 </p>
 
 **Основные принципы архитектуры:**
@@ -106,7 +106,7 @@
 - **Ingress Controller выполняет роль API Gateway**
 - Каждый входящий запрос проходит через Ingress, где:
     - извлекается JWT-токен
-    - выполняется валидация токена через **Auth Service**
+    - выполняется валидация токена через **JWT Validator Service**
     - проверяются права доступа
 - **Разграничение прав доступа на уровне API Gateway / BFF**
 - Secure secrets management

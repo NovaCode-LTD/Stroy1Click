@@ -1,7 +1,7 @@
 services:
-  product-db:
+  catalog-db:
     image: postgres:15.13
-    container_name: product-db
+    container_name: catalog-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
@@ -235,26 +235,26 @@ services:
       - auth-db
       - redis
       - otel-collector
-  product-service:
-    image: stroy1click/product:0.0.1-SNAPSHOT
-    container_name: product-service
+  catalog-service:
+    image: stroy1click/catalog:0.0.1-SNAPSHOT
+    container_name: catalog-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
       REDISSON_HOST: redis
       REDISSON_PORT: 6379
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://product-db:5432/stroy1click
+      SPRING_DATASOURCE_URL: jdbc:postgresql://catalog-db:5432/stroy1click
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      SPRING_FLYWAY_URL: jdbc:postgresql://product-db:5432/stroy1click
+      SPRING_FLYWAY_URL: jdbc:postgresql://catalog-db:5432/stroy1click
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
 
-      URL_SEARCH: http://search-service:5050/sync/events
+      URL_SEARCH: http://search-service:4045/sync/events
 
-      OTEL_SERVICE_NAME: product-service
+      OTEL_SERVICE_NAME: catalog-service
       OTEL_TRACES_EXPORTER: otlp
       OTEL_TRACES_SAMPLER: always_on
       OTEL_METRICS_EXPORTER: otlp
@@ -267,7 +267,7 @@ services:
     networks:
       stroy1click:
     depends_on:
-      - product-db
+      - catalog-db
       - redis
       - otel-collector
   attribute-service:
@@ -404,11 +404,11 @@ services:
       URL_AUTH: http://auth-service:9090/api/v1/auth
       URL_CONFIRMATIONCODE: http://confirmation-code-service:6060/api/v1/confirmation-codes
 
-      URL_CATEGORY: http://product-service:7070/api/v1/categories
-      URL_SUBCATEGORY: http://product-service:7070/api/v1/subcategories
-      URL_PRODUCTTYPE: http://product-service:7070/api/v1/product-types
-      URL_PRODUCT: http://product-service:7070/api/v1/products
-      URL_STORAGE: http://product-service:7070/api/v1/storage
+      URL_CATEGORY: http://catalog-service:7070/api/v1/categories
+      URL_SUBCATEGORY: http://catalog-service:7070/api/v1/subcategories
+      URL_PRODUCTTYPE: http://catalog-service:7070/api/v1/product-types
+      URL_PRODUCT: http://catalog-service:7070/api/v1/products
+      URL_STORAGE: http://catalog-service:7070/api/v1/storage
 
       URL_ATTRIBUTE: http://attribute-service:4040/api/v1/attributes
       URL_ATTRIBUTEOPTION: http://attribute-service:4040/api/v1/attribute-options

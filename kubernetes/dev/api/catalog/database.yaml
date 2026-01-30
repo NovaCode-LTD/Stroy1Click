@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: product-db
+  name: catalog-db
   namespace: dev
 spec:
   externalName: host.docker.internal
