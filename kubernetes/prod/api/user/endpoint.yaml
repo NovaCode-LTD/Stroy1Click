@@ -4,6 +4,6 @@ metadata:
   name: user-db
 subsets:
   - addresses:
-      - ip: 192.168.0.8
+      - ip: 192.168.0.15
     ports:
       - port: 5432

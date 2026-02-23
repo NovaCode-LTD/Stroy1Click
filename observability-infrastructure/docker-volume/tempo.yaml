@@ -22,13 +22,8 @@ compactor:
 
 storage:
   trace:
-    backend: s3
-    s3:
-      endpoint: s3.ru-7.storage.selcloud.ru
-      bucket: stroy1click
-      region: ru-7
-      access_key: b0a085fad6914c2abd49b762ee2263e2
-      secret_key: 2bd487564bb54e9a8231bb3944108971
-      insecure: false
+    backend: local
+    local:
+      path: /tmp/tempo/traces
     wal:
       path: /tmp/tempo/wal

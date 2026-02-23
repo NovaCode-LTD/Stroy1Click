@@ -6,7 +6,7 @@ namespace: prod
 resources:
   - api-ingress.yaml
   - configmap.yaml
-  - endpoint.yaml
+  - redis-endpoint.yaml
   - api-ingress-secret.yaml
   - namespace.yaml
   - redis.yaml

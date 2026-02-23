@@ -4,6 +4,6 @@ metadata:
   name: confirmation-code-db
 subsets:
   - addresses:
-      - ip: 192.168.0.10
+      - ip: 192.168.0.11
     ports:
       - port: 5432

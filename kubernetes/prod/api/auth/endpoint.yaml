@@ -4,6 +4,6 @@ metadata:
   name: auth-db
 subsets:
   - addresses:
-      - ip: 192.168.0.9
+      - ip: 192.168.0.10
     ports:
       - port: 5432

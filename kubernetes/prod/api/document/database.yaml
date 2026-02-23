@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-db
+spec:
+  ports:
+    - port: 5439
+      targetPort: 5432

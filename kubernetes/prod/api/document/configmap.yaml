@@ -1,35 +1,31 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: confirmation-code-service-config
+  name: document-service-config
 data:
   SPRING_PROFILES_ACTIVE: "prod"
+  REDISSON_HOST: "redis"
+  REDISSON_PORT: "6379"
 
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://confirmation-code-db:5436/stroy1click"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://document-db:5439/stroy1click"
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
-  SPRING_FLYWAY_URL: "jdbc:postgresql://confirmation-code-db:5436/stroy1click"
+  SPRING_FLYWAY_URL: "jdbc:postgresql://document-db:5439/stroy1click"
   SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
 
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
   SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
   SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.springframework.kafka.support.serializer.JsonSerializer"
-  SPRING_KAFKA_PRODUCER_ACKS: "all"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_DELIVERY_TIMEOUT_MS: "120000"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_LINGER_MS: "0"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_REQUEST_TIMEOUT_MS: "30000"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: "4"
-  SPRING_KAFKA_PRODUCER_PROPERTIES_SPRING_JSON_ADD_TYPE_HEADERS: "true"
+  SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+  SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
+  SPRING_KAFKA_CONSUMER_GROUP_ID: "document-service"
+  SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_DESERIALIZER_VALUE_DELEGATE_CLASS: "org.springframework.kafka.support.serializer.JsonDeserializer"
+  SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "ru.stroy1click.common.*"
   SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
   SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-512"
 
-  URL_USER: "http://user-service:8080/api/v1/users"
-  URL_AUTH: "http://auth-service:9090/api/v1/auth"
-  URL_EMAIL: "http://email-service:5050/api/v1/emails"
-
   SERVER_ADDRESS: "0.0.0.0"
 
-  OTEL_SERVICE_NAME: "confirmation-code-service"
+  OTEL_SERVICE_NAME: "document-service"
   OTEL_TRACES_EXPORTER: "otlp"
   OTEL_TRACES_SAMPLER: "always_on"
   OTEL_METRICS_EXPORTER: "otlp"

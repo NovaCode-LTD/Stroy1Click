@@ -7,6 +7,16 @@ data:
 
   SERVER_ADDRESS: "0.0.0.0"
 
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+  SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.springframework.kafka.support.serializer.JsonSerializer"
+  SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+  SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.springframework.kafka.support.serializer.JsonDeserializer"
+  SPRING_KAFKA_CONSUMER_GROUP_ID: "email-service"
+  SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
+  SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
+  SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-512"
+
   OTEL_SERVICE_NAME: "email-service"
   OTEL_TRACES_EXPORTER: "otlp"
   OTEL_TRACES_SAMPLER: "always_on"

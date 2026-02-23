@@ -76,11 +76,43 @@ services:
       - "5438:5432"
     networks:
       - stroy1click
+  document-db:
+    image: postgres:15.13
+    container_name: document-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=stroy1click
+    ports:
+      - "5439:5432"
+    networks:
+      - stroy1click
   redis:
     image: redis:6.2
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - stroy1click
+  kafka:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: "WnLkTHhkQaiJbwP8FClPhw"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9091"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9091"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
     networks:
       - stroy1click
   otel-collector:
@@ -145,12 +177,21 @@ services:
     networks:
       stroy1click:
   notification-service:
-    image: stroy1click/notification:0.0.1-SNAPSHOT
+    image: stroy1click/notification-arm64:0.0.1-SNAPSHOT
     container_name: notification-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
       REDISSON_HOST: redis
       REDISSON_PORT: 6379
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_CONSUMER_GROUP_ID: notification-service
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "ru.stroy1click.common.*"
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_ENCODING: UTF-8
 
       OTEL_SERVICE_NAME: notification-service
       OTEL_TRACES_EXPORTER: otlp
@@ -168,7 +209,7 @@ services:
       - redis
       - otel-collector
   order-service:
-    image: stroy1click/order:0.0.1-SNAPSHOT
+    image: stroy1click/order-arm64:0.0.1-SNAPSHOT
     container_name: order-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -183,6 +224,16 @@ services:
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_PRODUCER_ACKS: all
+      SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
+      SPRING_KAFKA_PRODUCER_PROPERTIES_DELIVERY_TIMEOUT_MS: 120000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_LINGER_MS: 0
+      SPRING_KAFKA_PRODUCER_PROPERTIES_REQUEST_TIMEOUT_MS: 30000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: 4
 
       URL_NOTIFICATION: http://notification-service:2020/api/v1/notifications
 
@@ -203,7 +254,7 @@ services:
       - redis
       - otel-collector
   auth-service:
-    image: stroy1click/auth:0.0.1-SNAPSHOT
+    image: stroy1click/auth-arm64:0.0.1-SNAPSHOT
     container_name: auth-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -217,6 +268,14 @@ services:
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
 
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_GROUP_ID: auth-service
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "ru.stroy1click.common.*"
+
       URL_USER: http://user-service:8080/api/v1/users
 
       OTEL_SERVICE_NAME: auth-service
@@ -228,7 +287,49 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
-      - "9090:9090"
+      - "9070:9070"
+    networks:
+      stroy1click:
+    depends_on:
+      - auth-db
+      - redis
+      - otel-collector
+  document-service:
+    image: stroy1click/document-arm64:0.0.1-SNAPSHOT
+    container_name: document-service
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      REDISSON_HOST: redis
+      REDISSON_PORT: 6379
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://document-db:5432/stroy1click
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_FLYWAY_URL: jdbc:postgresql://document-db:5432/stroy1click
+      SPRING_FLYWAY_USER: postgres
+      SPRING_FLYWAY_PASSWORD: password
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_GROUP_ID: document-service
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "ru.stroy1click.common.*"
+
+      OTEL_SERVICE_NAME: document-service
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_TRACES_SAMPLER: always_on
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_METRICS_EXPORT_INTERVAL: 5000
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports:
+      - "6065:6065"
     networks:
       stroy1click:
     depends_on:
@@ -236,7 +337,7 @@ services:
       - redis
       - otel-collector
   catalog-service:
-    image: stroy1click/catalog:0.0.1-SNAPSHOT
+    image: stroy1click/catalog-arm64:0.0.1-SNAPSHOT
     container_name: catalog-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -251,6 +352,17 @@ services:
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_PRODUCER_ACKS: all
+      SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
+      SPRING_KAFKA_PRODUCER_PROPERTIES_DELIVERY_TIMEOUT_MS: 120000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_LINGER_MS: 0
+      SPRING_KAFKA_PRODUCER_PROPERTIES_REQUEST_TIMEOUT_MS: 30000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: 4
+      SPRING_KAFKA_PRODUCER_PROPERTIES_SPRING_JSON_ADD_TYPE_HEADERS: "true"
 
       URL_SEARCH: http://search-service:4045/sync/events
 
@@ -271,7 +383,7 @@ services:
       - redis
       - otel-collector
   attribute-service:
-    image: stroy1click/attribute:0.0.1-SNAPSHOT
+    image: stroy1click/attribute-arm64:0.0.1-SNAPSHOT
     container_name: attribute-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -305,7 +417,7 @@ services:
       - redis
       - otel-collector
   user-service:
-    image: stroy1click/user:0.0.1-SNAPSHOT
+    image: stroy1click/user-arm64:0.0.1-SNAPSHOT
     container_name: user-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -320,6 +432,15 @@ services:
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      SPRING_KAFKA_CONSUMER_GROUP_ID: user-service
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_DESERIALIZER_VALUE_DELEGATE_CLASS: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "ru.stroy1click.common.*"
 
       OTEL_SERVICE_NAME: user-service
       OTEL_TRACES_EXPORTER: otlp
@@ -338,7 +459,7 @@ services:
       - redis
       - otel-collector
   confirmation-code-service:
-    image: stroy1click/confirmation:0.0.1-SNAPSHOT
+    image: stroy1click/confirmation-arm64:0.0.1-SNAPSHOT
     container_name: confirmation-code-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -353,6 +474,17 @@ services:
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: password
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_PRODUCER_ACKS: all
+      SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
+      SPRING_KAFKA_PRODUCER_PROPERTIES_DELIVERY_TIMEOUT_MS: 120000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_LINGER_MS: 0
+      SPRING_KAFKA_PRODUCER_PROPERTIES_REQUEST_TIMEOUT_MS: 30000
+      SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: 4
+      SPRING_KAFKA_PRODUCER_PROPERTIES_SPRING_JSON_ADD_TYPE_HEADERS: "true"
 
       URL_USER: http://user-service:8080/api/v1/users
       URL_AUTH: http://auth-service:9090/api/v1/auth
@@ -375,10 +507,18 @@ services:
       - redis
       - otel-collector
   email-service:
-    image: stroy1click/email:0.0.1-SNAPSHOT
+    image: stroy1click/email-arm64:0.0.1-SNAPSHOT
     container_name: email-service
     environment:
       SPRING_PROFILES_ACTIVE: prod
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_GROUP_ID: email-service
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
 
       OTEL_SERVICE_NAME: email-service
       OTEL_TRACES_EXPORTER: otlp
@@ -394,62 +534,62 @@ services:
       stroy1click:
     depends_on:
       - otel-collector
-  web-service:
-    image: stroy1click/web:0.0.1-SNAPSHOT
-    container_name: web-service
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-
-      URL_USER: http://user-service:8080/api/v1/users
-      URL_AUTH: http://auth-service:9090/api/v1/auth
-      URL_CONFIRMATIONCODE: http://confirmation-code-service:6060/api/v1/confirmation-codes
-
-      URL_CATEGORY: http://catalog-service:7070/api/v1/categories
-      URL_SUBCATEGORY: http://catalog-service:7070/api/v1/subcategories
-      URL_PRODUCTTYPE: http://catalog-service:7070/api/v1/product-types
-      URL_PRODUCT: http://catalog-service:7070/api/v1/products
-      URL_STORAGE: http://catalog-service:7070/api/v1/storage
-
-      URL_ATTRIBUTE: http://attribute-service:4040/api/v1/attributes
-      URL_ATTRIBUTEOPTION: http://attribute-service:4040/api/v1/attribute-options
-      URL_PRODUCTATTRIBUTEASSIGNMENT: http://attribute-service:4040/api/v1/product-attribute-assignments
-
-      URL_ORDER: http://order-service:1010/api/v1/orders
-      URL_NOTIFICATION: http://notification-service:2020/api/v1/notifications
-
-      URL_SEARCH: http://search-service:4045/api/v1/search
-
-      OTEL_SERVICE_NAME: web-service
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_TRACES_SAMPLER: always_on
-      OTEL_METRICS_EXPORTER: otlp
-      OTEL_METRICS_EXPORT_INTERVAL: 5000
-      OTEL_LOGS_EXPORTER: otlp
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-    ports:
-      - "3035:3035"
-    networks:
-      stroy1click:
-    depends_on:
-      - otel-collector
-      - product-service
-      - attribute-service
-      - auth-service
-      - confirmation-code-service
-      - notification-service
-      - user-service
-      - email-service
-      - order-service
-  search-service:
-    image: stroy1click/search:0.0.1-SNAPSHOT
-    container_name: search-service
-    ports:
-      - "4045:4045"
-    networks:
-      stroy1click:
-    depends_on:
-      - elasticsearch
-      - search-db
+#  web-service:
+#    image: stroy1click/web-arm64:0.0.1-SNAPSHOT
+#    container_name: web-service
+#    environment:
+#      SPRING_PROFILES_ACTIVE: prod
+#
+#      URL_USER: http://user-service:8080/api/v1/users
+#      URL_AUTH: http://auth-service:9090/api/v1/auth
+#      URL_CONFIRMATIONCODE: http://confirmation-code-service:6060/api/v1/confirmation-codes
+#
+#      URL_CATEGORY: http://catalog-service:7070/api/v1/categories
+#      URL_SUBCATEGORY: http://catalog-service:7070/api/v1/subcategories
+#      URL_PRODUCTTYPE: http://catalog-service:7070/api/v1/product-types
+#      URL_PRODUCT: http://catalog-service:7070/api/v1/products
+#      URL_STORAGE: http://catalog-service:7070/api/v1/storage
+#
+#      URL_ATTRIBUTE: http://attribute-service:4040/api/v1/attributes
+#      URL_ATTRIBUTEOPTION: http://attribute-service:4040/api/v1/attribute-options
+#      URL_PRODUCTATTRIBUTEASSIGNMENT: http://attribute-service:4040/api/v1/product-attribute-assignments
+#
+#      URL_ORDER: http://order-service:1010/api/v1/orders
+#      URL_NOTIFICATION: http://notification-service:2020/api/v1/notifications
+#
+#      URL_SEARCH: http://search-service:4045/api/v1/search
+#
+#      OTEL_SERVICE_NAME: web-service
+#      OTEL_TRACES_EXPORTER: otlp
+#      OTEL_TRACES_SAMPLER: always_on
+#      OTEL_METRICS_EXPORTER: otlp
+#      OTEL_METRICS_EXPORT_INTERVAL: 5000
+#      OTEL_LOGS_EXPORTER: otlp
+#      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+#      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+#    ports:
+#      - "3035:3035"
+#    networks:
+#      stroy1click:
+#    depends_on:
+#      - otel-collector
+#      - catalog-service
+#      - attribute-service
+#      - auth-service
+#      - confirmation-code-service
+#      - notification-service
+#      - user-service
+#      - email-service
+#      - order-service
+#  search-service:
+#    image: stroy1click/search:0.0.1-SNAPSHOT
+#    container_name: search-service
+#    ports:
+#      - "4045:4045"
+#    networks:
+#      stroy1click:
+#    depends_on:
+#      - elasticsearch
+#      - search-db
 networks:
   stroy1click:

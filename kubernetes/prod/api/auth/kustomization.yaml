@@ -9,3 +9,4 @@ resources:
   - configmap.yaml
   - database.yaml
   - endpoint.yaml
+  - secret.yaml
